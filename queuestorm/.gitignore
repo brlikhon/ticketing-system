@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment and secrets — NEVER commit
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test / temp artifacts
+__check.js
+__result.txt
+__health.txt
+__verify.txt
+validate_html.py
+_safety_smoke.py
+_dbg.py
+_smoke*.py
+_t*.py
+
+# Coverage
+.coverage
+htmlcov/

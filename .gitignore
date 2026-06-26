@@ -1,0 +1,17 @@
+# Top-level repo .gitignore
+# (queuestorm/.gitignore handles the app internals)
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Local secrets — never commit
+*.pem
+*.key
+.env
+.env.local

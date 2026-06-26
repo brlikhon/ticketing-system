@@ -1,0 +1,1875 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QueueStorm Investigator</title>
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@300,400,500,700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <style>
+    /* ── Design Tokens ─────────────────────────────────────────────── */
+    :root, [data-theme="light"] {
+      --color-bg: #f7f6f2;
+      --color-surface: #f9f8f5;
+      --color-surface-2: #fbfbf9;
+      --color-surface-offset: #f3f0ec;
+      --color-surface-offset-2: #edeae5;
+      --color-surface-dynamic: #e6e4df;
+      --color-divider: #dcd9d5;
+      --color-border: #d4d1ca;
+      --color-text: #28251d;
+      --color-text-muted: #7a7974;
+      --color-text-faint: #bab9b4;
+      --color-text-inverse: #f9f8f4;
+      --color-primary: #01696f;
+      --color-primary-hover: #0c4e54;
+      --color-primary-active: #0f3638;
+      --color-primary-highlight: #cedcd8;
+      --color-warning: #964219;
+      --color-warning-hover: #713417;
+      --color-warning-highlight: #ddcfc6;
+      --color-error: #a12c7b;
+      --color-error-hover: #7d1e5e;
+      --color-error-highlight: #e0ced7;
+      --color-success: #437a22;
+      --color-success-hover: #2e5c10;
+      --color-success-highlight: #d4dfcc;
+      --color-notification: #a13544;
+      --color-notification-hover: #782b33;
+      --color-notification-highlight: #dececb;
+      --color-orange: #da7101;
+      --color-orange-highlight: #e7d7c4;
+      --color-gold: #d19900;
+      --color-gold-highlight: #e9e0c6;
+      --shadow-sm: 0 1px 2px rgba(40, 37, 29, 0.06);
+      --shadow-md: 0 4px 12px rgba(40, 37, 29, 0.08);
+      --shadow-lg: 0 12px 32px rgba(40, 37, 29, 0.12);
+      --radius-sm: 0.375rem;
+      --radius-md: 0.5rem;
+      --radius-lg: 0.75rem;
+      --radius-xl: 1rem;
+      --radius-full: 9999px;
+      --transition: 180ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    [data-theme="dark"] {
+      --color-bg: #171614;
+      --color-surface: #1c1b19;
+      --color-surface-2: #201f1d;
+      --color-surface-offset: #1d1c1a;
+      --color-surface-offset-2: #22211f;
+      --color-surface-dynamic: #2d2c2a;
+      --color-divider: #262523;
+      --color-border: #393836;
+      --color-text: #cdccca;
+      --color-text-muted: #797876;
+      --color-text-faint: #5a5957;
+      --color-text-inverse: #2b2a28;
+      --color-primary: #4f98a3;
+      --color-primary-hover: #227f8b;
+      --color-primary-active: #1a626b;
+      --color-primary-highlight: #313b3b;
+      --color-warning: #bb653b;
+      --color-warning-highlight: #564942;
+      --color-error: #d163a7;
+      --color-error-highlight: #4c3d46;
+      --color-success: #6daa45;
+      --color-success-highlight: #3a4435;
+      --color-notification: #dd6974;
+      --color-notification-highlight: #574848;
+      --color-orange: #fdab43;
+      --color-orange-highlight: #564b3e;
+      --color-gold: #e8af34;
+      --color-gold-highlight: #4d4332;
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+      --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
+      --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.4);
+    }
+    :root {
+      --text-xs:   clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
+      --text-sm:   clamp(0.875rem, 0.8rem + 0.35vw, 1rem);
+      --text-base: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+      --text-lg:   clamp(1.125rem, 1rem + 0.75vw, 1.5rem);
+      --text-xl:   clamp(1.5rem, 1.2rem + 1.25vw, 2.25rem);
+      --space-1: 0.25rem; --space-2: 0.5rem; --space-3: 0.75rem; --space-4: 1rem;
+      --space-5: 1.25rem; --space-6: 1.5rem; --space-8: 2rem; --space-10: 2.5rem;
+      --space-12: 3rem; --space-16: 4rem;
+      --font-body: 'Satoshi', 'Inter', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+    }
+
+    /* ── Base ──────────────────────────────────────────────────────── */
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; }
+    body {
+      font-family: var(--font-body);
+      background: var(--color-bg);
+      color: var(--color-text);
+      font-size: var(--text-sm);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+    button { font-family: inherit; cursor: pointer; }
+    input, textarea, select, button { font-family: inherit; font-size: inherit; color: inherit; }
+    a { color: var(--color-primary); }
+    :focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 2px;
+      border-radius: var(--radius-sm);
+    }
+
+    /* ── Header ────────────────────────────────────────────────────── */
+    #app-header {
+      height: 56px;
+      background: var(--color-surface);
+      border-bottom: 1px solid var(--color-divider);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 var(--space-5);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      gap: var(--space-4);
+    }
+    .header-logo {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      font-weight: 600;
+      color: var(--color-text);
+    }
+    .header-logo svg { color: var(--color-primary); flex-shrink: 0; }
+    .header-title { font-size: var(--text-base); letter-spacing: -0.01em; }
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      flex-wrap: wrap;
+    }
+    .api-url-config {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+    .api-url-config input {
+      background: var(--color-surface-offset);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: 6px var(--space-3);
+      width: 200px;
+      color: var(--color-text);
+      font-family: var(--font-mono);
+      font-size: var(--text-xs);
+      transition: border-color var(--transition);
+    }
+    .api-url-config input:focus { border-color: var(--color-primary); outline: none; }
+    .api-url-config button {
+      background: var(--color-surface-dynamic);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: 6px var(--space-3);
+      color: var(--color-text);
+      font-size: var(--text-xs);
+      font-weight: 500;
+      transition: background var(--transition);
+    }
+    .api-url-config button:hover { background: var(--color-surface-offset-2); }
+    .api-status {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      background: var(--color-surface-offset);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-full);
+      padding: 4px var(--space-3);
+      font-size: var(--text-xs);
+      font-weight: 500;
+      cursor: pointer;
+      transition: background var(--transition);
+    }
+    .api-status:hover { background: var(--color-surface-offset-2); }
+    .status-dot {
+      width: 8px; height: 8px;
+      border-radius: var(--radius-full);
+      background: var(--color-text-faint);
+      flex-shrink: 0;
+    }
+    .status-dot.online { background: var(--color-success); }
+    .status-dot.offline { background: var(--color-notification); }
+    .status-dot.checking {
+      background: var(--color-gold);
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+    [data-theme-toggle] {
+      background: transparent;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      width: 36px; height: 36px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-text-muted);
+      transition: background var(--transition), color var(--transition);
+    }
+    [data-theme-toggle]:hover { background: var(--color-surface-offset); color: var(--color-text); }
+    [data-theme-toggle] svg { width: 18px; height: 18px; }
+
+    /* ── Main layout ───────────────────────────────────────────────── */
+    #app-main {
+      display: grid;
+      grid-template-columns: 420px 1fr;
+      gap: 0;
+      min-height: calc(100vh - 56px);
+    }
+    @media (max-width: 1023px) {
+      #app-main { grid-template-columns: 1fr; }
+    }
+
+    /* ── Left Panel ────────────────────────────────────────────────── */
+    #left-panel {
+      background: var(--color-surface);
+      border-right: 1px solid var(--color-divider);
+      padding: var(--space-5);
+      overflow-y: auto;
+      max-height: calc(100vh - 56px);
+    }
+    @media (max-width: 1023px) {
+      #left-panel {
+        max-height: none;
+        border-right: none;
+        border-bottom: 1px solid var(--color-divider);
+      }
+    }
+    @media (min-width: 1024px) {
+      #left-panel { position: sticky; top: 56px; }
+    }
+    .panel-title {
+      font-size: var(--text-lg);
+      font-weight: 600;
+      margin: 0 0 var(--space-4);
+      letter-spacing: -0.01em;
+    }
+    .sample-loader {
+      background: var(--color-primary-highlight);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: var(--space-3) var(--space-4);
+      margin-bottom: var(--space-5);
+    }
+    .sample-loader label {
+      display: block;
+      font-size: var(--text-xs);
+      font-weight: 500;
+      color: var(--color-text-muted);
+      margin-bottom: var(--space-2);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .sample-loader select {
+      width: 100%;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: var(--space-2) var(--space-3);
+      color: var(--color-text);
+      font-size: var(--text-sm);
+      cursor: pointer;
+    }
+    .sample-loader select:focus { border-color: var(--color-primary); outline: none; }
+
+    /* ── Form ──────────────────────────────────────────────────────── */
+    .form-group { margin-bottom: var(--space-4); }
+    .form-group > label {
+      display: block;
+      font-size: var(--text-sm);
+      font-weight: 500;
+      margin-bottom: var(--space-2);
+      color: var(--color-text);
+    }
+    .required { color: var(--color-notification); margin-left: 2px; }
+    input[type="text"], input[type="number"], input[type="datetime-local"], textarea, select {
+      width: 100%;
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: var(--space-2) var(--space-3);
+      color: var(--color-text);
+      font-size: var(--text-sm);
+      transition: border-color var(--transition);
+    }
+    input:focus, textarea:focus, select:focus { border-color: var(--color-primary); outline: none; }
+    input.invalid, textarea.invalid { border-color: var(--color-notification); }
+    textarea { resize: vertical; min-height: 88px; line-height: 1.5; }
+    .char-count {
+      display: block;
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+      margin-top: var(--space-1);
+      text-align: right;
+    }
+
+    /* Optional fields accordion */
+    .optional-fields {
+      background: var(--color-surface-offset);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--space-4);
+    }
+    .optional-fields > summary {
+      cursor: pointer;
+      padding: var(--space-3) var(--space-4);
+      font-size: var(--text-sm);
+      font-weight: 500;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+    }
+    .optional-fields > summary::-webkit-details-marker { display: none; }
+    .optional-fields > summary::after {
+      content: "▸";
+      font-size: 12px;
+      color: var(--color-text-muted);
+      transition: transform var(--transition);
+    }
+    .optional-fields[open] > summary::after { transform: rotate(90deg); }
+    .optional-badge {
+      font-size: 10px;
+      background: var(--color-surface-dynamic);
+      color: var(--color-text-muted);
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-left: auto;
+      margin-right: var(--space-2);
+    }
+    .optional-content { padding: 0 var(--space-4) var(--space-4); }
+    .optional-content .form-group { margin-bottom: var(--space-3); }
+    .optional-content .form-group:last-child { margin-bottom: 0; }
+
+    /* Segmented control (language) */
+    .segmented {
+      display: inline-flex;
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: 3px;
+      gap: 2px;
+      width: 100%;
+    }
+    .segmented button {
+      flex: 1;
+      background: transparent;
+      border: 0;
+      padding: 6px var(--space-3);
+      border-radius: calc(var(--radius-md) - 3px);
+      color: var(--color-text-muted);
+      font-size: var(--text-xs);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      transition: background var(--transition), color var(--transition);
+    }
+    .segmented button[aria-pressed="true"] {
+      background: var(--color-primary);
+      color: var(--color-text-inverse);
+    }
+
+    /* Transaction history */
+    .txn-section { margin-bottom: var(--space-4); }
+    .txn-section .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-3);
+    }
+    .txn-section .section-header label {
+      font-size: var(--text-sm);
+      font-weight: 500;
+      color: var(--color-text);
+    }
+    .txn-actions { display: flex; gap: var(--space-2); }
+    .txn-actions button {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: 6px var(--space-3);
+      color: var(--color-text);
+      font-size: var(--text-xs);
+      font-weight: 500;
+      transition: background var(--transition);
+    }
+    .txn-actions button:hover { background: var(--color-surface-offset); }
+    #txn-cards-container {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+      margin-bottom: var(--space-3);
+    }
+    .txn-card {
+      background: var(--color-surface-offset);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: var(--space-3) var(--space-4);
+      transition: box-shadow var(--transition), border-color var(--transition);
+    }
+    .txn-card.highlighted {
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 2px var(--color-primary-highlight);
+    }
+    .txn-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: var(--space-2);
+      margin-bottom: var(--space-1);
+    }
+    .txn-id {
+      font-family: var(--font-mono);
+      font-size: var(--text-xs);
+      font-weight: 500;
+      color: var(--color-text);
+    }
+    .txn-meta {
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+      font-family: var(--font-mono);
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+    }
+    .txn-meta .dot { color: var(--color-text-faint); }
+    .txn-delete {
+      background: transparent;
+      border: 0;
+      width: 24px; height: 24px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-text-muted);
+      border-radius: var(--radius-sm);
+      transition: background var(--transition), color var(--transition);
+    }
+    .txn-delete:hover { background: var(--color-notification-highlight); color: var(--color-notification); }
+    .txn-delete svg { width: 14px; height: 14px; }
+    .txn-status-pill {
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .txn-status-completed { background: var(--color-success-highlight); color: var(--color-success); }
+    .txn-status-failed    { background: var(--color-error-highlight); color: var(--color-error); }
+    .txn-status-pending   { background: var(--color-gold-highlight); color: var(--color-gold); }
+    .txn-status-reversed  { background: var(--color-warning-highlight); color: var(--color-warning); }
+
+    .txn-empty {
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+      text-align: center;
+      padding: var(--space-4);
+      background: var(--color-surface-2);
+      border: 1px dashed var(--color-border);
+      border-radius: var(--radius-md);
+    }
+
+    /* Inline add-transaction form */
+    .txn-add-form {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: var(--space-3) var(--space-4);
+      margin-bottom: var(--space-3);
+    }
+    .txn-add-form .form-group { margin-bottom: var(--space-2); }
+    .txn-add-form .form-group:last-child { margin-bottom: 0; }
+    .txn-add-form .form-group label {
+      font-size: 11px;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 4px;
+    }
+    .txn-add-form input, .txn-add-form select {
+      font-size: var(--text-xs);
+      padding: 6px var(--space-2);
+    }
+    .txn-add-form-actions {
+      display: flex;
+      gap: var(--space-2);
+      justify-content: flex-end;
+      margin-top: var(--space-2);
+    }
+    .txn-add-form-actions button {
+      padding: 6px var(--space-3);
+      font-size: var(--text-xs);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--color-border);
+      background: var(--color-surface);
+      color: var(--color-text);
+    }
+    .txn-add-form-actions .primary {
+      background: var(--color-primary);
+      color: var(--color-text-inverse);
+      border-color: var(--color-primary);
+    }
+
+    #txn-json-input { min-height: 100px; font-family: var(--font-mono); font-size: var(--text-xs); }
+    .txn-json-status { font-size: var(--text-xs); margin-top: var(--space-2); }
+    .txn-json-status.ok { color: var(--color-success); }
+    .txn-json-status.error { color: var(--color-notification); }
+
+    /* Buttons */
+    .btn-primary {
+      width: 100%;
+      background: var(--color-primary);
+      color: var(--color-text-inverse);
+      border: 0;
+      border-radius: var(--radius-md);
+      padding: var(--space-3) var(--space-4);
+      font-size: var(--text-sm);
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-2);
+      transition: background var(--transition), opacity var(--transition);
+    }
+    .btn-primary:hover:not(:disabled) { background: var(--color-primary-hover); }
+    .btn-primary:active:not(:disabled) { background: var(--color-primary-active); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-primary svg { width: 16px; height: 16px; }
+    .btn-ghost {
+      background: transparent;
+      border: 0;
+      color: var(--color-text-muted);
+      padding: var(--space-2);
+      font-size: var(--text-xs);
+      text-align: center;
+      width: 100%;
+      margin-top: var(--space-2);
+      transition: color var(--transition);
+    }
+    .btn-ghost:hover { color: var(--color-text); }
+
+    /* ── Right Panel ───────────────────────────────────────────────── */
+    #right-panel {
+      padding: var(--space-6);
+      overflow-y: auto;
+      max-height: calc(100vh - 56px);
+    }
+    @media (max-width: 1023px) {
+      #right-panel { max-height: none; }
+    }
+
+    /* Empty state */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: var(--space-16) var(--space-6);
+      color: var(--color-text-muted);
+      min-height: 60vh;
+    }
+    .empty-state .empty-icon {
+      width: 64px; height: 64px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--color-primary-highlight);
+      color: var(--color-primary);
+      border-radius: var(--radius-full);
+      margin-bottom: var(--space-4);
+    }
+    .empty-state .empty-icon svg { width: 32px; height: 32px; }
+    .empty-state h2 {
+      font-size: var(--text-lg);
+      color: var(--color-text);
+      font-weight: 600;
+      margin: 0 0 var(--space-2);
+    }
+    .empty-state p {
+      margin: 0;
+      max-width: 360px;
+      font-size: var(--text-sm);
+    }
+
+    /* Loading state */
+    .loading-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-16) var(--space-6);
+      min-height: 60vh;
+      text-align: center;
+    }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid var(--color-primary-highlight);
+      border-top-color: var(--color-primary);
+      border-radius: var(--radius-full);
+      animation: spin 0.9s linear infinite;
+      margin-bottom: var(--space-5);
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-state .loading-title {
+      font-size: var(--text-base);
+      font-weight: 500;
+      color: var(--color-text);
+      margin-bottom: var(--space-4);
+    }
+    .loading-steps {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+      margin-bottom: var(--space-5);
+      min-height: 90px;
+    }
+    .loading-step {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+      opacity: 0;
+      animation: stepFade 2.4s ease-in-out infinite;
+    }
+    .loading-step:nth-child(1) { animation-delay: 0s; }
+    .loading-step:nth-child(2) { animation-delay: 0.8s; }
+    .loading-step:nth-child(3) { animation-delay: 1.6s; }
+    @keyframes stepFade {
+      0%, 100% { opacity: 0.2; }
+      30%, 60% { opacity: 1; }
+    }
+    .loading-bar {
+      width: 240px;
+      height: 6px;
+      background: var(--color-surface-offset-2);
+      border-radius: var(--radius-full);
+      overflow: hidden;
+    }
+    .loading-bar-fill {
+      height: 100%;
+      background: var(--color-primary);
+      width: 0%;
+      border-radius: var(--radius-full);
+      animation: loadProgress 5s linear forwards;
+    }
+    @keyframes loadProgress { to { width: 80%; } }
+
+    /* Error state */
+    .error-state {
+      background: var(--color-notification-highlight);
+      border: 1px solid var(--color-notification);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+      color: var(--color-notification);
+      max-width: 560px;
+      margin: var(--space-8) auto;
+    }
+    .error-state h3 {
+      margin: 0 0 var(--space-2);
+      font-size: var(--text-base);
+      color: var(--color-notification);
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+    .error-state p { margin: 0 0 var(--space-4); font-size: var(--text-sm); color: var(--color-text); }
+    .error-state .error-actions { display: flex; gap: var(--space-2); }
+    .error-state button {
+      padding: 6px var(--space-3);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--color-border);
+      background: var(--color-surface);
+      color: var(--color-text);
+      font-size: var(--text-xs);
+      font-weight: 500;
+    }
+    .error-state button:hover { background: var(--color-surface-offset); }
+
+    /* ── Result cards ──────────────────────────────────────────────── */
+    .result-stack { max-width: 760px; }
+    .result-header {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-3);
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--space-4);
+    }
+    .result-ticket-id {
+      font-family: var(--font-mono);
+      font-size: var(--text-lg);
+      font-weight: 600;
+      color: var(--color-text);
+      letter-spacing: -0.01em;
+    }
+    .result-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      align-items: center;
+    }
+
+    .result-card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-divider);
+      border-radius: var(--radius-lg);
+      padding: var(--space-4) var(--space-5);
+      box-shadow: var(--shadow-sm);
+      margin-bottom: var(--space-3);
+      animation: slideInRight 220ms ease forwards;
+      opacity: 0;
+    }
+    .result-card:nth-child(2) { animation-delay: 60ms; }
+    .result-card:nth-child(3) { animation-delay: 120ms; }
+    .result-card:nth-child(4) { animation-delay: 180ms; }
+    .result-card:nth-child(5) { animation-delay: 240ms; }
+    .result-card:nth-child(6) { animation-delay: 300ms; }
+    @keyframes slideInRight {
+      from { opacity: 0; transform: translateX(12px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    .result-card-title {
+      font-size: var(--text-xs);
+      font-weight: 600;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin: 0 0 var(--space-3);
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+    .result-card-title svg { width: 14px; height: 14px; color: var(--color-primary); }
+
+    /* Badge pills */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-1);
+      padding: 4px var(--space-2);
+      border-radius: var(--radius-full);
+      font-size: var(--text-xs);
+      font-weight: 500;
+      line-height: 1;
+      white-space: nowrap;
+      animation: badgeIn 320ms ease;
+    }
+    @keyframes badgeIn { from { transform: scale(0.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .badge svg { width: 12px; height: 12px; }
+    .badge-success { background: var(--color-success-highlight); color: var(--color-success); }
+    .badge-warning { background: var(--color-warning-highlight); color: var(--color-warning); }
+    .badge-error   { background: var(--color-error-highlight);   color: var(--color-error); }
+    .badge-neutral { background: var(--color-surface-offset-2); color: var(--color-text-muted); }
+    .badge-primary { background: var(--color-primary-highlight); color: var(--color-primary); }
+    .badge-primary-outline {
+      background: transparent;
+      color: var(--color-primary);
+      border: 1px solid var(--color-primary);
+    }
+    .badge-orange  { background: var(--color-orange-highlight); color: var(--color-orange); }
+    .badge-gold    { background: var(--color-gold-highlight); color: var(--color-gold); }
+
+    /* Human review banner */
+    .human-review-banner {
+      background: var(--color-warning-highlight);
+      border: 1px solid var(--color-warning);
+      border-radius: var(--radius-md);
+      padding: var(--space-3) var(--space-4);
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      font-size: var(--text-sm);
+      color: var(--color-warning);
+      margin-bottom: var(--space-4);
+      font-weight: 500;
+    }
+    .human-review-banner svg { width: 18px; height: 18px; flex-shrink: 0; }
+    .auto-eligible-note {
+      background: var(--color-success-highlight);
+      color: var(--color-success);
+      border: 1px solid var(--color-success);
+      border-radius: var(--radius-md);
+      padding: var(--space-3) var(--space-4);
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      font-size: var(--text-sm);
+      margin-bottom: var(--space-4);
+    }
+    .auto-eligible-note svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+    /* Evidence card */
+    .evidence-row {
+      display: grid;
+      grid-template-columns: 160px 1fr;
+      gap: var(--space-3);
+      align-items: start;
+      padding: var(--space-3) 0;
+      border-top: 1px solid var(--color-divider);
+    }
+    .evidence-row:first-of-type { border-top: 0; padding-top: 0; }
+    .evidence-label {
+      font-size: var(--text-xs);
+      font-weight: 500;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .evidence-value { font-size: var(--text-sm); color: var(--color-text); }
+    .evidence-verdict {
+      font-size: var(--text-base);
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+    .evidence-verdict svg { width: 18px; height: 18px; }
+    .evidence-verdict.consistent { color: var(--color-success); }
+    .evidence-verdict.inconsistent { color: var(--color-warning); }
+    .evidence-verdict.insufficient_data { color: var(--color-text-muted); }
+    .evidence-txid {
+      font-family: var(--font-mono);
+      font-size: var(--text-sm);
+      color: var(--color-primary);
+      font-weight: 500;
+    }
+    .evidence-none {
+      font-style: italic;
+      color: var(--color-text-muted);
+    }
+    .confidence-row { display: flex; align-items: center; gap: var(--space-3); }
+    .confidence-bar-track {
+      flex: 1;
+      height: 6px;
+      background: var(--color-surface-offset-2);
+      border-radius: var(--radius-full);
+      overflow: hidden;
+    }
+    .confidence-bar-fill {
+      height: 100%;
+      border-radius: var(--radius-full);
+      background: var(--color-success);
+      width: 0%;
+      transition: width 600ms ease-out;
+    }
+    .confidence-bar-fill.medium { background: var(--color-warning); }
+    .confidence-bar-fill.low    { background: var(--color-notification); }
+    .confidence-value {
+      font-family: var(--font-mono);
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+      min-width: 40px;
+      text-align: right;
+    }
+
+    /* Reason codes */
+    .reason-codes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      margin-top: var(--space-2);
+    }
+    .reason-pill {
+      background: var(--color-surface-offset-2);
+      color: var(--color-text-muted);
+      padding: 2px var(--space-2);
+      border-radius: var(--radius-full);
+      font-size: var(--text-xs);
+      font-family: var(--font-mono);
+    }
+
+    /* Agent summary */
+    .next-action {
+      margin-top: var(--space-3);
+      padding: var(--space-3) var(--space-4);
+      background: var(--color-surface-offset);
+      border-radius: var(--radius-md);
+      border-left: 3px solid var(--color-primary);
+      font-size: var(--text-sm);
+    }
+    .next-action-label {
+      font-size: 11px;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 600;
+      margin-bottom: var(--space-1);
+    }
+
+    /* Customer reply */
+    .reply-block {
+      background: var(--color-surface-offset);
+      border-left: 3px solid var(--color-primary);
+      border-radius: var(--radius-md);
+      padding: var(--space-4);
+      font-size: var(--text-sm);
+      line-height: 1.6;
+      color: var(--color-text);
+      white-space: pre-wrap;
+      margin-bottom: var(--space-3);
+    }
+    .reply-actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: var(--space-3);
+    }
+    .copy-btn {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: 4px var(--space-3);
+      font-size: var(--text-xs);
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      color: var(--color-text);
+      transition: background var(--transition);
+    }
+    .copy-btn:hover { background: var(--color-surface-dynamic); }
+    .copy-btn svg { width: 12px; height: 12px; }
+    .copy-btn.copied { color: var(--color-success); }
+
+    .safety-check {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+      padding: var(--space-3) var(--space-4);
+      background: var(--color-success-highlight);
+      border: 1px solid var(--color-success);
+      border-radius: var(--radius-md);
+      color: var(--color-success);
+      font-size: var(--text-xs);
+    }
+    .safety-check.violation {
+      background: var(--color-notification-highlight);
+      border-color: var(--color-notification);
+      color: var(--color-notification);
+    }
+    .safety-row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      font-weight: 500;
+    }
+    .safety-row svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+    .safety-violation-banner {
+      background: var(--color-notification-highlight);
+      border: 1px solid var(--color-notification);
+      color: var(--color-notification);
+      border-radius: var(--radius-md);
+      padding: var(--space-3) var(--space-4);
+      font-size: var(--text-sm);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      margin-bottom: var(--space-2);
+    }
+    .safety-violation-banner svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+    /* Raw JSON */
+    details.raw-json {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-divider);
+      border-radius: var(--radius-md);
+      padding: var(--space-3) var(--space-4);
+      margin-top: var(--space-4);
+    }
+    details.raw-json > summary {
+      cursor: pointer;
+      font-size: var(--text-xs);
+      font-weight: 500;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      user-select: none;
+    }
+    details.raw-json > pre {
+      margin: var(--space-3) 0 0;
+      font-family: var(--font-mono);
+      font-size: var(--text-xs);
+      white-space: pre-wrap;
+      word-break: break-word;
+      color: var(--color-text);
+      max-height: 480px;
+      overflow: auto;
+    }
+    .json-key { color: var(--color-primary); }
+    .json-string { color: var(--color-text); }
+    .json-num { color: var(--color-text-muted); }
+    .json-bool { color: var(--color-orange); font-weight: 500; }
+    .json-null { color: var(--color-text-faint); font-style: italic; }
+
+    @media (max-width: 768px) {
+      .header-right .api-url-config { display: none; }
+      #right-panel, #left-panel { padding: var(--space-4); }
+      .api-url-config input { width: 140px; }
+    }
+  </style>
+</head>
+<body>
+
+  <header id="app-header">
+    <div class="header-logo">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M3 12h3l2-6 4 12 2-6h7"/>
+      </svg>
+      <span class="header-title">QueueStorm Investigator</span>
+    </div>
+    <div class="header-right">
+      <div class="api-url-config">
+        <input id="api-url-input" type="text" value="http://localhost:8000" spellcheck="false" />
+        <button id="connect-btn" type="button">Connect</button>
+      </div>
+      <button id="api-status" class="api-status" type="button" title="Click to re-check">
+        <span class="status-dot checking"></span>
+        <span class="status-label">Checking…</span>
+      </button>
+      <button data-theme-toggle aria-label="Toggle theme" type="button">
+        <i data-lucide="moon"></i>
+      </button>
+    </div>
+  </header>
+
+  <main id="app-main">
+    <aside id="left-panel">
+      <h1 class="panel-title">New Investigation</h1>
+
+      <div class="sample-loader">
+        <label for="sample-select">Load a sample case to auto-fill the form</label>
+        <select id="sample-select">
+          <option value="">— select a sample —</option>
+        </select>
+      </div>
+
+      <form id="ticket-form" novalidate>
+        <div class="form-group">
+          <label for="ticket-id">Ticket ID <span class="required">*</span></label>
+          <input type="text" id="ticket-id" placeholder="TKT-001" autocomplete="off" />
+        </div>
+
+        <div class="form-group">
+          <label for="complaint">Complaint <span class="required">*</span></label>
+          <textarea id="complaint" rows="4" placeholder="Describe the customer's complaint…"></textarea>
+          <span class="char-count" id="char-count">0 characters</span>
+        </div>
+
+        <details class="optional-fields" id="optional-fields">
+          <summary>Context &amp; Channel <span class="optional-badge">optional</span></summary>
+          <div class="optional-content">
+            <div class="form-group">
+              <label>Language</label>
+              <div class="segmented" role="group" aria-label="Language">
+                <button type="button" data-lang="en" aria-pressed="true">EN</button>
+                <button type="button" data-lang="bn" aria-pressed="false">BN</button>
+                <button type="button" data-lang="mixed" aria-pressed="false">MIXED</button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="channel">Channel</label>
+              <select id="channel">
+                <option value="">— unspecified —</option>
+                <option value="in_app_chat">In-app chat</option>
+                <option value="call_center">Call center</option>
+                <option value="email">Email</option>
+                <option value="merchant_portal">Merchant portal</option>
+                <option value="field_agent">Field agent</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="user-type">User Type</label>
+              <select id="user-type">
+                <option value="">— unspecified —</option>
+                <option value="customer">Customer</option>
+                <option value="merchant">Merchant</option>
+                <option value="agent">Agent</option>
+                <option value="unknown">Unknown</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="campaign-context">Campaign Context</label>
+              <input type="text" id="campaign-context" placeholder="e.g. boishakh_bonanza_day_1" autocomplete="off" />
+            </div>
+          </div>
+        </details>
+
+        <div class="form-group txn-section">
+          <div class="section-header">
+            <label>Transaction History</label>
+            <div class="txn-actions">
+              <button type="button" id="add-txn-btn">+ Add Transaction</button>
+              <button type="button" id="paste-json-btn">Paste JSON</button>
+            </div>
+          </div>
+          <div id="txn-add-form-container"></div>
+          <div id="txn-cards-container"></div>
+          <textarea id="txn-json-input" placeholder='[{"transaction_id":"TXN-1","timestamp":"2026-04-14T08:00:00Z","type":"transfer","amount":1000,"counterparty":"+8801712345678","status":"completed"}]' style="display:none"></textarea>
+          <div id="txn-json-status" class="txn-json-status"></div>
+        </div>
+
+        <button type="submit" id="submit-btn" class="btn-primary" disabled>
+          <i data-lucide="zap"></i> Investigate Ticket
+        </button>
+        <button type="button" id="clear-btn" class="btn-ghost">Clear form</button>
+      </form>
+    </aside>
+
+    <section id="right-panel"></section>
+  </main>
+
+  <script>
+    /* ════════════════════════════════════════════════════════════════
+       1. SAMPLE CASES — covers every verdict / case / severity / dept
+       ════════════════════════════════════════════════════════════════ */
+    const SAMPLE_CASES = [
+      {
+        id: "SAMPLE-01",
+        label: "Wrong-number transfer (consistent, wrong_transfer, high)",
+        ticket_id: "TKT-10421",
+        complaint: "I sent 5000 taka to a wrong number around 2pm today. The number was supposed to be 01712345678 but I think I typed it wrong. The person isn't responding to my call. Please help me get my money back.",
+        language: "en", channel: "in_app_chat", user_type: "customer",
+        campaign_context: "boishakh_bonanza_day_1",
+        transaction_history: [
+          { transaction_id: "TXN-9101", timestamp: "2026-04-14T14:08:22Z", type: "transfer", amount: 5000, counterparty: "+8801719876543", status: "completed" },
+          { transaction_id: "TXN-9087", timestamp: "2026-04-13T18:12:00Z", type: "cash_in",  amount: 10000, counterparty: "AGENT-512", status: "completed" }
+        ]
+      },
+      {
+        id: "SAMPLE-02",
+        label: "Failed cash-out (consistent, failed_cashout, medium)",
+        ticket_id: "TKT-10422",
+        complaint: "আমি ৩০০০ টাকা cash out করতে গিয়েছিলাম ১১.৫৫ তে, কিন্তু agent বললো পয়সা কাটা হয়নি। তবে আমার wallet এ এখন balance নেই। এখন কি হবে?",
+        language: "bn", channel: "in_app_chat", user_type: "customer",
+        transaction_history: [
+          { transaction_id: "TXN-9120", timestamp: "2026-04-14T11:55:09Z", type: "cash_out", amount: 3000, counterparty: "AGENT-208", status: "failed" },
+          { transaction_id: "TXN-9118", timestamp: "2026-04-14T11:30:00Z", type: "cash_in",  amount: 4000, counterparty: "AGENT-208", status: "completed" }
+        ]
+      },
+      {
+        id: "SAMPLE-03",
+        label: "Duplicate transfer (consistent, duplicate_charge, high)",
+        ticket_id: "TKT-10423",
+        complaint: "আমি ১২০০ টাকা একবারই পাঠিয়েছি কিন্তু আমার account থেকে দুইবার ১২০০ করে কেটে নিয়েছে। Please refund the duplicate charge.",
+        language: "bn", channel: "call_center", user_type: "customer",
+        transaction_history: [
+          { transaction_id: "TXN-9201", timestamp: "2026-04-14T09:14:01Z", type: "transfer", amount: 1200, counterparty: "+8801911223344", status: "completed" },
+          { transaction_id: "TXN-9202", timestamp: "2026-04-14T09:14:04Z", type: "transfer", amount: 1200, counterparty: "+8801911223344", status: "completed" }
+        ]
+      },
+      {
+        id: "SAMPLE-04",
+        label: "Payment-not-received (consistent, payment_not_received, high)",
+        ticket_id: "TKT-10424",
+        complaint: "I made a payment of 2500 taka to merchant MERCH-77 at 7:40 PM for a bill. The merchant says they did not receive it. My balance is reduced and the txn shows completed. Please check.",
+        language: "en", channel: "email", user_type: "customer",
+        transaction_history: [
+          { transaction_id: "TXN-9310", timestamp: "2026-04-14T19:40:55Z", type: "payment", amount: 2500, counterparty: "MERCH-77", status: "completed" }
+        ]
+      },
+      {
+        id: "SAMPLE-05",
+        label: "Account blocked (consistent, account_blocked, high)",
+        ticket_id: "TKT-10425",
+        complaint: "I cannot log in or send money. It says 'account restricted' since yesterday afternoon. I have not done anything wrong.",
+        language: "en", channel: "in_app_chat", user_type: "customer",
+        transaction_history: [
+          { transaction_id: "TXN-9401", timestamp: "2026-04-13T15:22:11Z", type: "transfer", amount: 800, counterparty: "+8801555667788", status: "completed" }
+        ]
+      },
+      {
+        id: "SAMPLE-06",
+        label: "OTP / phishing (consistent, phishing_suspected, critical)",
+        ticket_id: "TKT-10426",
+        complaint: "Someone called me pretending to be bKash support and asked for my OTP. I gave it. Now 15000 taka is missing from my account. Please help.",
+        language: "en", channel: "call_center", user_type: "customer",
+        transaction_history: [
+          { transaction_id: "TXN-9501", timestamp: "2026-04-14T13:05:00Z", type: "transfer", amount: 15000, counterparty: "+8801900001111", status: "completed" }
+        ]
+      },
+      {
+        id: "SAMPLE-07",
+        label: "Slow refund (consistent, refund_pending, medium)",
+        ticket_id: "TKT-10427",
+        complaint: "Refund of 450 taka was supposed to come 3 days ago. Still not received. Status is 'processing'.",
+        language: "en", channel: "email", user_type: "customer",
+        transaction_history: [
+          { transaction_id: "TXN-9601", timestamp: "2026-04-11T10:00:00Z", type: "refund", amount: 450, counterparty: "MERCH-12", status: "pending" }
+        ]
+      },
+      {
+        id: "SAMPLE-08",
+        label: "Agent dispute (consistent, agent_dispute, high)",
+        ticket_id: "TKT-10428",
+        complaint: "Agent AGENT-99 took 2000 taka for cash-in but only credited 1500. I have the SMS.",
+        language: "en", channel: "merchant_portal", user_type: "customer",
+        transaction_history: [
+          { transaction_id: "TXN-9701", timestamp: "2026-04-14T08:30:00Z", type: "cash_in", amount: 2000, counterparty: "AGENT-99", status: "completed" }
+        ]
+      },
+      {
+        id: "SAMPLE-09",
+        label: "Vague report (insufficient_data, general_inquiry, low)",
+        ticket_id: "TKT-10429",
+        complaint: "Something is wrong with my account. Please check.",
+        language: "en", channel: "in_app_chat", user_type: "customer",
+        transaction_history: [
+          { transaction_id: "TXN-9801", timestamp: "2026-04-13T09:00:00Z", type: "transfer", amount: 200, counterparty: "+8801700000001", status: "completed" },
+          { transaction_id: "TXN-9802", timestamp: "2026-04-14T09:00:00Z", type: "cash_in",  amount: 300, counterparty: "AGENT-01",     status: "completed" }
+        ]
+      },
+      {
+        id: "SAMPLE-10",
+        label: "Mismatch (inconsistent, complaint_mismatch, medium)",
+        ticket_id: "TKT-10430",
+        complaint: "I sent 8000 taka yesterday but it didn't go through.",
+        language: "en", channel: "in_app_chat", user_type: "customer",
+        transaction_history: [
+          { transaction_id: "TXN-9901", timestamp: "2026-04-13T18:00:00Z", type: "transfer", amount: 500, counterparty: "+8801711112222", status: "completed" }
+        ]
+      }
+    ];
+
+    /* ════════════════════════════════════════════════════════════════
+       2. STATE — single source of truth
+       ════════════════════════════════════════════════════════════════ */
+    const state = {
+      apiUrl: localStorage.getItem("qs.apiUrl") || "http://localhost:8000",
+      theme:  localStorage.getItem("qs.theme")  || "light",
+      transactions: [],
+      language: "en",
+      lastResponse: null,
+      safetyViolations: { cred: false, refund: false, thirdParty: false }
+    };
+
+    /* ════════════════════════════════════════════════════════════════
+       3. THEME
+       ════════════════════════════════════════════════════════════════ */
+    function applyTheme(t) {
+      document.documentElement.setAttribute("data-theme", t);
+      const btn = document.querySelector("[data-theme-toggle]");
+      if (btn) btn.innerHTML = `<i data-lucide="${t === 'dark' ? 'sun' : 'moon'}"></i>`;
+      if (window.lucide) lucide.createIcons();
+    }
+    function toggleTheme() {
+      state.theme = state.theme === "dark" ? "light" : "dark";
+      localStorage.setItem("qs.theme", state.theme);
+      applyTheme(state.theme);
+    }
+
+    /* ════════════════════════════════════════════════════════════════
+       4. HELPERS
+       ════════════════════════════════════════════════════════════════ */
+    const $  = (sel) => document.querySelector(sel);
+    const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+    const el = (tag, attrs = {}, ...children) => {
+      const node = document.createElement(tag);
+      for (const [k, v] of Object.entries(attrs)) {
+        if (k === "class") node.className = v;
+        else if (k === "dataset") Object.assign(node.dataset, v);
+        else if (k.startsWith("on") && typeof v === "function") node.addEventListener(k.slice(2).toLowerCase(), v);
+        else if (v === false || v == null) continue;
+        else if (v === true) node.setAttribute(k, "");
+        else node.setAttribute(k, v);
+      }
+      for (const c of children.flat()) {
+        if (c == null || c === false) continue;
+        node.appendChild(typeof c === "string" ? document.createTextNode(c) : c);
+      }
+      return node;
+    };
+    const icon = (name, size = 16) => `<i data-lucide="${name}" style="width:${size}px;height:${size}px"></i>`;
+    function refreshIcons() { if (window.lucide) lucide.createIcons(); }
+    function escapeHtml(s) {
+      return String(s ?? "").replace(/[&<>"']/g, (c) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      }[c]));
+    }
+    function fmtAmount(n) {
+      if (typeof n !== "number") return "—";
+      return n.toLocaleString("en-IN");
+    }
+
+    /* ════════════════════════════════════════════════════════════════
+       5. SAMPLE SELECTOR
+       ════════════════════════════════════════════════════════════════ */
+    function populateSamples() {
+      const sel = $("#sample-select");
+      SAMPLE_CASES.forEach((c) => {
+        const opt = document.createElement("option");
+        opt.value = c.id;
+        opt.textContent = c.label;
+        sel.appendChild(opt);
+      });
+      sel.addEventListener("change", (e) => {
+        const c = SAMPLE_CASES.find((s) => s.id === e.target.value);
+        if (c) loadSample(c);
+      });
+    }
+    function loadSample(c) {
+      $("#ticket-id").value = c.ticket_id;
+      $("#complaint").value = c.complaint;
+      $("#channel").value   = c.channel || "";
+      $("#user-type").value = c.user_type || "";
+      $("#campaign-context").value = c.campaign_context || "";
+      state.language = c.language || "en";
+      $$(".segmented button").forEach((b) => {
+        b.setAttribute("aria-pressed", b.dataset.lang === state.language ? "true" : "false");
+      });
+      state.transactions = JSON.parse(JSON.stringify(c.transaction_history));
+      renderTransactionCards();
+      updateCharCount();
+      updateSubmitState();
+      updateFormValidity();
+    }
+
+    /* ════════════════════════════════════════════════════════════════
+       6. TRANSACTION UI
+       ════════════════════════════════════════════════════════════════ */
+    function renderTransactionCards() {
+      const container = $("#txn-cards-container");
+      container.innerHTML = "";
+      if (state.transactions.length === 0) {
+        container.appendChild(el("div", { class: "txn-empty" }, "No transactions yet. Add one or paste JSON."));
+        return;
+      }
+      const relevantId = state.lastResponse?.relevant_transaction_id;
+      state.transactions.forEach((t, idx) => {
+        const isHighlighted = relevantId && t.transaction_id === relevantId;
+        const card = el("div", { class: "txn-card" + (isHighlighted ? " highlighted" : "") },
+          el("div", { class: "txn-card-header" },
+            el("span", { class: "txn-id" }, t.transaction_id),
+            el("span", { class: `txn-status-pill txn-status-${t.status}` }, t.status),
+            el("button", { type: "button", class: "txn-delete", title: "Remove", onclick: () => removeTransaction(idx) },
+              el("span", { innerHTML: icon("trash-2") })
+            )
+          ),
+          el("div", { class: "txn-meta" },
+            t.type,
+            el("span", { class: "dot" }, "•"),
+            fmtAmount(t.amount) + " BDT",
+            el("span", { class: "dot" }, "•"),
+            String(t.counterparty ?? "—"),
+            el("span", { class: "dot" }, "•"),
+            t.timestamp
+          )
+        );
+        container.appendChild(card);
+      });
+      refreshIcons();
+    }
+    function removeTransaction(i) {
+      state.transactions.splice(i, 1);
+      renderTransactionCards();
+      updateSubmitState();
+    }
+    function showAddForm() {
+      const wrap = $("#txn-add-form-container");
+      wrap.innerHTML = "";
+      const form = el("div", { class: "txn-add-form" },
+        el("div", { class: "form-group" },
+          el("label", {}, "Transaction ID"),
+          el("input", { type: "text", id: "new-txn-id", placeholder: "TXN-1234" })
+        ),
+        el("div", { class: "form-group" },
+          el("label", {}, "Type"),
+          (() => { const s = el("select", { id: "new-txn-type" });
+            ["transfer","payment","cash_in","cash_out","refund","fee","reversal"].forEach((t) => s.appendChild(new Option(t, t)));
+            return s; })()
+        ),
+        el("div", { class: "form-group" },
+          el("label", {}, "Amount (BDT)"),
+          el("input", { type: "number", id: "new-txn-amount", min: "0", step: "any", placeholder: "0" })
+        ),
+        el("div", { class: "form-group" },
+          el("label", {}, "Counterparty"),
+          el("input", { type: "text", id: "new-txn-counterparty", placeholder: "+8801712345678" })
+        ),
+        el("div", { class: "form-group" },
+          el("label", {}, "Status"),
+          (() => { const s = el("select", { id: "new-txn-status" });
+            ["completed","pending","failed","reversed"].forEach((t) => s.appendChild(new Option(t, t)));
+            return s; })()
+        ),
+        el("div", { class: "form-group" },
+          el("label", {}, "Timestamp (ISO)"),
+          el("input", { type: "text", id: "new-txn-timestamp", placeholder: "2026-04-14T14:08:22Z" })
+        ),
+        el("div", { class: "txn-add-form-actions" },
+          el("button", { type: "button", onclick: () => { wrap.innerHTML = ""; } }, "Cancel"),
+          el("button", { type: "button", class: "primary", onclick: commitNewTransaction }, "Add")
+        )
+      );
+      wrap.appendChild(form);
+      $("#new-txn-id").focus();
+    }
+    function commitNewTransaction() {
+      const id  = $("#new-txn-id").value.trim();
+      const amt = parseFloat($("#new-txn-amount").value);
+      if (!id || isNaN(amt)) {
+        const wrap = $("#txn-add-form-container");
+        wrap.prepend(el("div", { class: "txn-json-status error" }, "Transaction ID and Amount are required."));
+        return;
+      }
+      state.transactions.push({
+        transaction_id: id,
+        timestamp:      $("#new-txn-timestamp").value.trim() || new Date().toISOString(),
+        type:           $("#new-txn-type").value,
+        amount:         amt,
+        counterparty:   $("#new-txn-counterparty").value.trim(),
+        status:         $("#new-txn-status").value
+      });
+      $("#txn-add-form-container").innerHTML = "";
+      renderTransactionCards();
+      updateSubmitState();
+    }
+
+    /* ════════════════════════════════════════════════════════════════
+       7. JSON PASTE
+       ════════════════════════════════════════════════════════════════ */
+    function setupJsonPaste() {
+      const ta  = $("#txn-json-input");
+      const btn = $("#paste-json-btn");
+      btn.addEventListener("click", () => {
+        ta.style.display = ta.style.display === "none" ? "block" : "none";
+        if (ta.style.display === "block") ta.focus();
+      });
+      ta.addEventListener("input", () => {
+        const status = $("#txn-json-status");
+        try {
+          const data = JSON.parse(ta.value);
+          if (!Array.isArray(data)) throw new Error("Expected a JSON array");
+          data.forEach((t, i) => {
+            for (const k of ["transaction_id","timestamp","type","amount","status"]) {
+              if (t[k] == null) throw new Error(`Item ${i}: missing "${k}"`);
+            }
+          });
+          state.transactions = data;
+          renderTransactionCards();
+          status.textContent = `✓ Parsed ${data.length} transaction(s)`;
+          status.className = "txn-json-status ok";
+          updateSubmitState();
+        } catch (e) {
+          status.textContent = "✗ " + e.message;
+          status.className = "txn-json-status error";
+        }
+      });
+    }
+
+    /* ════════════════════════════════════════════════════════════════
+       8. FORM VALIDATION
+       ════════════════════════════════════════════════════════════════ */
+    function updateCharCount() {
+      const v = $("#complaint").value;
+      $("#char-count").textContent = `${v.length} character${v.length === 1 ? "" : "s"}`;
+    }
+    function updateFormValidity() {
+      const id  = $("#ticket-id").value.trim();
+      const txt = $("#complaint").value.trim();
+      const ok  = id.length > 0 && txt.length > 0;
+      $("#ticket-id").classList.toggle("invalid", id.length === 0);
+      $("#complaint").classList.toggle("invalid", txt.length === 0);
+      return ok;
+    }
+    function updateSubmitState() {
+      const ok = updateFormValidity();
+      $("#submit-btn").disabled = !(ok && state.transactions.length > 0);
+    }
+
+    /* ════════════════════════════════════════════════════════════════
+       9. CLIENT-SIDE SAFETY (mirrors backend regex)
+       ════════════════════════════════════════════════════════════════ */
+    function clientSafetyCheck(complaint) {
+      const v = { cred: false, refund: false, thirdParty: false };
+      const re = (p) => p.test(complaint);
+      const CRED = /(pin|otp|password|cvv|card\s*number|otp\s*code|verification\s*code)/i;
+      const REFUND = /(refund\s*(?:my|me|now|guarantee|100%)|promise\s*(?:to\s*)?refund)/i;
+      const THIRD = /(send\s*(?:the\s*)?(?:money\s*)?(?:back\s*)?to\s*(?:my|other)\s*(?:account|bank|number)|wire\s*to)/i;
+      if (re(CRED)) v.cred = true;
+      if (re(REFUND)) v.refund = true;
+      if (re(THIRD)) v.thirdParty = true;
+      return v;
+    }
+
+    /* ════════════════════════════════════════════════════════════════
+       10. API CALL
+       ════════════════════════════════════════════════════════════════ */
+    async function pingHealth(silent = false) {
+      const btn = $("#api-status");
+      const dot = btn.querySelector(".status-dot");
+      const lbl = btn.querySelector(".status-label");
+      if (!silent) {
+        dot.className = "status-dot checking";
+        lbl.textContent = "Checking…";
+      }
+      try {
+        const ctrl = new AbortController();
+        const t = setTimeout(() => ctrl.abort(), 5000);
+        const r = await fetch(state.apiUrl + "/health", { signal: ctrl.signal });
+        clearTimeout(t);
+        if (r.ok) {
+          dot.className = "status-dot online";
+          lbl.textContent = "Online";
+          return true;
+        }
+        dot.className = "status-dot offline";
+        lbl.textContent = "Error " + r.status;
+        return false;
+      } catch (e) {
+        dot.className = "status-dot offline";
+        lbl.textContent = "Offline";
+        if (!silent) console.warn("Health check failed:", e);
+        return false;
+      }
+    }
+    async function analyzeTicket() {
+      const payload = {
+        ticket_id:   $("#ticket-id").value.trim(),
+        complaint:   $("#complaint").value.trim(),
+        language:    state.language,
+        channel:     $("#channel").value || null,
+        user_type:   $("#user-type").value || null,
+        campaign_context: $("#campaign-context").value.trim() || null,
+        transaction_history: state.transactions
+      };
+      const ctrl = new AbortController();
+      const timeout = setTimeout(() => ctrl.abort(), 35000);
+      try {
+        const r = await fetch(state.apiUrl + "/analyze-ticket", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+          signal: ctrl.signal
+        });
+        clearTimeout(timeout);
+        if (!r.ok) {
+          const err = await r.json().catch(() => ({ detail: r.statusText }));
+          throw new Error(err.detail || `HTTP ${r.status}`);
+        }
+        return await r.json();
+      } finally {
+        clearTimeout(timeout);
+      }
+    }
+
+    /* ════════════════════════════════════════════════════════════════
+       11. RESULT RENDERING
+       ════════════════════════════════════════════════════════════════ */
+    const VERDICT_META = {
+      consistent:        { label: "Consistent",        icon: "check-circle",   cls: "badge-success" },
+      inconsistent:      { label: "Inconsistent",      icon: "alert-triangle", cls: "badge-warning" },
+      insufficient_data: { label: "Insufficient data", icon: "help-circle",    cls: "badge-neutral" }
+    };
+    const CASE_META = {
+      wrong_transfer:        { icon: "send",          cls: "badge-error"   },
+      failed_cashout:        { icon: "x-circle",      cls: "badge-error"   },
+      duplicate_charge:      { icon: "copy",          cls: "badge-error"   },
+      payment_not_received:  { icon: "package-x",     cls: "badge-warning" },
+      account_blocked:       { icon: "lock",          cls: "badge-error"   },
+      phishing_suspected:    { icon: "shield-alert",  cls: "badge-error"   },
+      refund_pending:        { icon: "clock",         cls: "badge-warning" },
+      agent_dispute:         { icon: "user-x",        cls: "badge-warning" },
+      general_inquiry:       { icon: "message-circle",cls: "badge-neutral" },
+      complaint_mismatch:    { icon: "git-compare",   cls: "badge-warning" },
+      other:                 { icon: "help-circle",   cls: "badge-neutral" }
+    };
+    const SEVERITY_META = {
+      critical: { icon: "shield", cls: "badge-error"   },
+      high:     { icon: "alert-octagon", cls: "badge-error"   },
+      medium:   { icon: "alert-triangle", cls: "badge-warning" },
+      low:      { icon: "info",  cls: "badge-neutral" }
+    };
+    const DEPT_META = {
+      dispute_resolution:    { icon: "gavel",         cls: "badge-primary" },
+      fraud_investigation:   { icon: "shield-alert",  cls: "badge-error"   },
+      payments:              { icon: "credit-card",   cls: "badge-primary" },
+      kyc_compliance:        { icon: "user-check",    cls: "badge-warning" },
+      account_services:      { icon: "settings",      cls: "badge-neutral" },
+      agent_operations:      { icon: "users",         cls: "badge-warning" },
+      general_support:       { icon: "life-buoy",     cls: "badge-neutral" }
+    };
+
+    function fmtEnum(v) {
+      if (!v) return "—";
+      return v.split("_").map((s) => s[0].toUpperCase() + s.slice(1)).join(" ");
+    }
+    function badgePill(meta, label, value) {
+      const cls = meta?.cls || "badge-neutral";
+      const iconName = meta?.icon || "circle";
+      const text = label || fmtEnum(value);
+      return `<span class="badge ${cls}">${icon(iconName, 12)} ${escapeHtml(text)}</span>`;
+    }
+    function confidenceTier(c) {
+      if (c == null) return "low";
+      if (c >= 0.75) return "high";
+      if (c >= 0.5)  return "medium";
+      return "low";
+    }
+    function syntaxHighlight(obj) {
+      let json = JSON.stringify(obj, null, 2);
+      json = escapeHtml(json);
+      return json.replace(
+        /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g,
+        (m) => {
+          if (/^"/.test(m)) {
+            if (/:$/.test(m)) return `<span class="json-key">${m}</span>`;
+            return `<span class="json-string">${m}</span>`;
+          } else if (/true|false/.test(m)) return `<span class="json-bool">${m}</span>`;
+          else if (/null/.test(m)) return `<span class="json-null">${m}</span>`;
+          return `<span class="json-num">${m}</span>`;
+        }
+      );
+    }
+
+    function renderEmpty() {
+      $("#right-panel").innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">${icon("search", 32)}</div>
+          <h2>No ticket analysed yet</h2>
+          <p>Fill out the form on the left, pick a sample case, then click <strong>Investigate Ticket</strong>.</p>
+        </div>`;
+      refreshIcons();
+    }
+    function renderLoading() {
+      $("#right-panel").innerHTML = `
+        <div class="loading-state">
+          <div class="spinner"></div>
+          <div class="loading-title">Investigating ticket…</div>
+          <div class="loading-steps">
+            <div class="loading-step">Reading complaint</div>
+            <div class="loading-step">Cross-referencing transaction history</div>
+            <div class="loading-step">Drafting customer reply</div>
+          </div>
+          <div class="loading-bar"><div class="loading-bar-fill"></div></div>
+        </div>`;
+    }
+    function renderError(msg, lastPayload) {
+      $("#right-panel").innerHTML = `
+        <div class="error-state">
+          <h3>${icon("alert-circle", 16)} Investigation failed</h3>
+          <p>${escapeHtml(msg)}</p>
+          <div class="error-actions">
+            <button type="button" onclick="window.__retryFromCache && window.__retryFromCache()">Retry</button>
+            <button type="button" onclick="navigator.clipboard.writeText(\`${escapeHtml(msg)}\`)">Copy error</button>
+          </div>
+        </div>`;
+      refreshIcons();
+    }
+
+    function renderResult(r) {
+      const verdict = VERDICT_META[r.evidence_verdict] || VERDICT_META.insufficient_data;
+      const caseM   = CASE_META[r.case_type]   || CASE_META.other;
+      const sevM    = SEVERITY_META[r.severity] || SEVERITY_META.low;
+      const deptM   = DEPT_META[r.department]   || DEPT_META.general_support;
+      const conf    = typeof r.confidence === "number" ? r.confidence : null;
+      const tier    = confidenceTier(conf);
+
+      const txnRef = r.relevant_transaction_id;
+      const reasons = Array.isArray(r.reason_codes) ? r.reason_codes : [];
+
+      const reviewBanner = r.human_review_required
+        ? `<div class="human-review-banner">${icon("user-check", 18)} Human review required before customer reply is sent.</div>`
+        : `<div class="auto-eligible-note">${icon("zap", 16)} Auto-eligible: this case can be handled without human review.</div>`;
+
+      const safetyRows = [];
+      if (state.safetyViolations.cred)
+        safetyRows.push(`<div class="safety-row">${icon("alert-triangle", 14)} Backend flagged: credential request attempt.</div>`);
+      if (state.safetyViolations.refund)
+        safetyRows.push(`<div class="safety-row">${icon("alert-triangle", 14)} Backend flagged: unauthorized refund promise.</div>`);
+      if (state.safetyViolations.thirdParty)
+        safetyRows.push(`<div class="safety-row">${icon("alert-triangle", 14)} Backend flagged: third-party routing / unverified contact.</div>`);
+      const violationBanner = state.safetyViolations.cred || state.safetyViolations.refund || state.safetyViolations.thirdParty
+        ? `<div class="safety-violation-banner">${icon("shield-alert", 16)} Safety guard triggered — customer reply was sanitized before display.</div>`
+        : "";
+      const safetyBlock = `
+        <div class="safety-check${safetyRows.length ? " violation" : ""}">
+          ${safetyRows.length ? safetyRows.join("") : `<div class="safety-row">${icon("shield-check", 14)} Reply passes PIN/OTP, refund, and routing checks.</div>`}
+        </div>`;
+
+      $("#right-panel").innerHTML = `
+        <div class="result-stack">
+          <div class="result-header">
+            <div class="result-ticket-id">${escapeHtml(r.ticket_id)}</div>
+            <div class="result-badges">
+              ${badgePill(verdict, null, r.evidence_verdict)}
+              ${badgePill(caseM, null, r.case_type)}
+              ${badgePill(sevM, null, r.severity)}
+              ${badgePill(deptM, null, r.department)}
+            </div>
+          </div>
+          ${reviewBanner}
+
+          <div class="result-card">
+            <h3 class="result-card-title">${icon("file-search", 14)} Evidence</h3>
+            <div class="evidence-row">
+              <div class="evidence-label">Verdict</div>
+              <div class="evidence-value">
+                <span class="evidence-verdict ${r.evidence_verdict}">${icon(verdict.icon, 18)} ${escapeHtml(verdict.label)}</span>
+              </div>
+            </div>
+            <div class="evidence-row">
+              <div class="evidence-label">Relevant Transaction</div>
+              <div class="evidence-value">
+                ${txnRef
+                  ? `<span class="evidence-txid">${escapeHtml(txnRef)}</span> <span style="color:var(--color-text-muted);font-size:var(--text-xs);">— see highlighted card →</span>`
+                  : `<span class="evidence-none">No matching transaction found in history.</span>`}
+              </div>
+            </div>
+            <div class="evidence-row">
+              <div class="evidence-label">Confidence</div>
+              <div class="evidence-value">
+                <div class="confidence-row">
+                  <div class="confidence-bar-track">
+                    <div class="confidence-bar-fill ${tier}" style="width:${conf != null ? Math.round(conf*100) : 0}%"></div>
+                  </div>
+                  <div class="confidence-value">${conf != null ? Math.round(conf*100) + "%" : "—"}</div>
+                </div>
+                ${reasons.length ? `<div class="reason-codes">${reasons.map((c) => `<span class="reason-pill">${escapeHtml(c)}</span>`).join("")}</div>` : ""}
+              </div>
+            </div>
+          </div>
+
+          <div class="result-card">
+            <h3 class="result-card-title">${icon("clipboard-list", 14)} Agent Summary</h3>
+            <div>${escapeHtml(r.agent_summary || "—")}</div>
+            <div class="next-action">
+              <div class="next-action-label">Recommended next action</div>
+              ${escapeHtml(r.recommended_next_action || "—")}
+            </div>
+          </div>
+
+          <div class="result-card">
+            <h3 class="result-card-title">${icon("message-square", 14)} Customer Reply</h3>
+            ${violationBanner}
+            <div class="reply-actions">
+              <button type="button" class="copy-btn" id="copy-reply-btn">
+                ${icon("copy", 12)} Copy reply
+              </button>
+            </div>
+            <div class="reply-block" id="reply-block">${escapeHtml(r.customer_reply || "")}</div>
+            ${safetyBlock}
+          </div>
+
+          <details class="raw-json">
+            <summary>Raw JSON response</summary>
+            <pre>${syntaxHighlight(r)}</pre>
+          </details>
+        </div>`;
+      refreshIcons();
+      const copyBtn = $("#copy-reply-btn");
+      if (copyBtn) {
+        copyBtn.addEventListener("click", async () => {
+          try {
+            await navigator.clipboard.writeText(r.customer_reply || "");
+            copyBtn.classList.add("copied");
+            copyBtn.innerHTML = `${icon("check", 12)} Copied`;
+            refreshIcons();
+            setTimeout(() => {
+              copyBtn.classList.remove("copied");
+              copyBtn.innerHTML = `${icon("copy", 12)} Copy reply`;
+              refreshIcons();
+            }, 1500);
+          } catch (e) { console.error(e); }
+        });
+      }
+    }
+
+    /* ════════════════════════════════════════════════════════════════
+       12. SUBMIT FLOW
+       ════════════════════════════════════════════════════════════════ */
+    async function onSubmit(e) {
+      e.preventDefault();
+      if (!updateFormValidity() || state.transactions.length === 0) return;
+      const submitBtn = $("#submit-btn");
+      submitBtn.disabled = true;
+      const original = submitBtn.innerHTML;
+      submitBtn.innerHTML = `<div class="spinner" style="width:14px;height:14px;border-width:2px;margin:0"></div> Investigating…`;
+      refreshIcons();
+      renderLoading();
+
+      const complaint = $("#complaint").value.trim();
+      state.safetyViolations = clientSafetyCheck(complaint);
+
+      try {
+        const data = await analyzeTicket();
+        state.lastResponse = data;
+        renderTransactionCards();
+        renderResult(data);
+      } catch (err) {
+        renderError(err.message || String(err));
+      } finally {
+        submitBtn.innerHTML = original;
+        submitBtn.disabled = false;
+        refreshIcons();
+        updateSubmitState();
+      }
+    }
+    window.__retryFromCache = () => onSubmit({ preventDefault: () => {} });
+
+    /* ════════════════════════════════════════════════════════════════
+       13. BOOT
+       ════════════════════════════════════════════════════════════════ */
+    function bind() {
+      $("#api-url-input").value = state.apiUrl;
+      $("#connect-btn").addEventListener("click", () => {
+        state.apiUrl = $("#api-url-input").value.trim().replace(/\/+$/, "");
+        localStorage.setItem("qs.apiUrl", state.apiUrl);
+        pingHealth();
+      });
+      $("#api-status").addEventListener("click", () => pingHealth());
+      document.querySelector("[data-theme-toggle]").addEventListener("click", toggleTheme);
+
+      $("#ticket-form").addEventListener("submit", onSubmit);
+      $("#complaint").addEventListener("input", () => { updateCharCount(); updateSubmitState(); });
+      $("#ticket-id").addEventListener("input", updateSubmitState);
+      $("#add-txn-btn").addEventListener("click", showAddForm);
+      $("#clear-btn").addEventListener("click", () => {
+        $("#ticket-id").value = "";
+        $("#complaint").value = "";
+        $("#channel").value = "";
+        $("#user-type").value = "";
+        $("#campaign-context").value = "";
+        state.transactions = [];
+        state.lastResponse = null;
+        renderTransactionCards();
+        updateCharCount();
+        updateSubmitState();
+        renderEmpty();
+      });
+
+      $$(".segmented button").forEach((b) => {
+        b.addEventListener("click", () => {
+          $$(".segmented button").forEach((x) => x.setAttribute("aria-pressed", "false"));
+          b.setAttribute("aria-pressed", "true");
+          state.language = b.dataset.lang;
+        });
+      });
+
+      setupJsonPaste();
+    }
+    function boot() {
+      bind();
+      populateSamples();
+      applyTheme(state.theme);
+      renderTransactionCards();
+      renderEmpty();
+      updateCharCount();
+      updateSubmitState();
+      pingHealth();
+    }
+    document.addEventListener("DOMContentLoaded", boot);
+  </script>
+</body>
+</html>
