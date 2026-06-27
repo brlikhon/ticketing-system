@@ -89,10 +89,14 @@ def sanitize_reply(reply: str) -> str:
         (r'\bimmediately refund\b', 'process any eligible return through official channels'),
         (r'\brefund (?:your )?(?:full )?balance\b', 'any eligible amount will be returned through official channels'),
         # --- Credential requests (should never reach here, but defensive) ---
-        (r'\b(share|provide|enter|send|give|tell us|type|submit)\s+(?:your\s+)?(?:pin|otp|password|passcode|cvv|card number)\b',
-         'never share such details with anyone'),
+        # Catch the FULL pattern "share/provide/... PIN/OTP/..." anywhere, so
+        # we can rewrite the whole sentence cleanly instead of dropping a
+        # "never" prefix next to an LLM-written "never" (causing double-negatives
+        # like "We cannot never share such details with anyone").
+        (r'\b(?:we (?:can(?:not)?|will not|won\'t|shall not)|please|kindly)?\s*(?:do not|don\'t)?\s*(?:share|provide|enter|send|give|tell us|type|submit)\s+(?:your\s+)?(?:pin|otp|password|passcode|cvv|card number)[^.!?\n]*',
+         'For your security, please never share your PIN, OTP, password, or card number with anyone — our team will never ask for them.'),
         (r'\bwhat is your (?:pin|otp|password)\b',
-         'we will never ask for such details'),
+         'our team will never ask for such details'),
         (r'\bverify your identity\b', 'our team will verify your case securely'),
     ]
     sanitized = reply
