@@ -90,6 +90,10 @@ fi
 
 cd "${APP_DIR}"
 
+# Allow git to operate on a repo owned by a different user (e.g. left over from
+# an earlier `sudo git clone`). Harmless if already configured.
+git config --global --add safe.directory "${APP_PARENT_DIR}" 2>/dev/null || true
+
 # Sanity check: the clone should have produced .env.example
 if [[ ! -f .env.example ]]; then
     die "Clone succeeded but .env.example is missing in ${APP_DIR} — repo looks incomplete. Aborting."
