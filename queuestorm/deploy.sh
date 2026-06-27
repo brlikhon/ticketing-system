@@ -9,7 +9,8 @@ set -euo pipefail
 
 APP_NAME="queuestorm"
 APP_USER="ubuntu"
-APP_DIR="/home/${APP_USER}/${APP_NAME}"
+APP_PARENT_DIR="/home/${APP_USER}/ticketing-system"
+APP_DIR="${APP_PARENT_DIR}/queuestorm"
 APP_PORT="8000"
 DOMAIN="${DOMAIN:-ticket.brlikhon.engineer}"
 PYTHON_VERSION="${PYTHON_VERSION:-}"   # auto-detected below
@@ -78,15 +79,21 @@ ufw --force enable
 # 3. Ensure app directory exists; clone or pull
 # ---------------------------------------------------------------------------
 log "Preparing app directory ${APP_DIR}..."
-if [[ -d "${APP_DIR}/.git" ]]; then
-    log "Existing repo found, pulling latest..."
-    sudo -u "${APP_USER}" git -C "${APP_DIR}" pull --ff-only
+install -d -o "${APP_USER}" -g "${APP_USER}" "${APP_PARENT_DIR}"
+if [[ -d "${APP_PARENT_DIR}/.git" ]]; then
+    log "Existing repo found at ${APP_PARENT_DIR}, pulling latest..."
+    sudo -u "${APP_USER}" git -C "${APP_PARENT_DIR}" pull --ff-only
 else
-    log "Cloning repository..."
-    sudo -u "${APP_USER}" git clone https://github.com/brlikhon/ticketing-system.git "${APP_DIR}"
+    log "Cloning repository into ${APP_PARENT_DIR}..."
+    sudo -u "${APP_USER}" git clone https://github.com/brlikhon/ticketing-system.git "${APP_PARENT_DIR}"
 fi
 
 cd "${APP_DIR}"
+
+# Sanity check: the clone should have produced .env.example
+if [[ ! -f .env.example ]]; then
+    die "Clone succeeded but .env.example is missing in ${APP_DIR} — repo looks incomplete. Aborting."
+fi
 
 # ---------------------------------------------------------------------------
 # 4. .env — create only if missing; never overwrite a real key
@@ -97,9 +104,9 @@ if [[ ! -f .env ]]; then
     sudo -u "${APP_USER}" chmod 600 .env
     echo ""
     echo "================================================================"
-    echo "  ACTION REQUIRED: edit /home/${APP_USER}/.env"
+    echo "  ACTION REQUIRED: edit ${APP_DIR}/.env"
     echo "  Set AISA_API_KEY=sk-your-key-here (or OPENAI_API_KEY=...)"
-    echo "  Then re-run: sudo bash deploy.sh"
+    echo "  Then re-run:  sudo bash $(realpath --relative-to=/ "$0" 2>/dev/null || echo deploy.sh)"
     echo "================================================================"
     echo ""
 else
