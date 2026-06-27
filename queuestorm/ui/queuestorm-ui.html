@@ -1031,7 +1031,7 @@
     </div>
     <div class="header-right">
       <div class="api-url-config">
-        <input id="api-url-input" type="text" value="http://localhost:8000" spellcheck="false" />
+        <input id="api-url-input" type="text" placeholder="(same origin)" spellcheck="false" />
         <button id="connect-btn" type="button">Connect</button>
       </div>
       <button id="api-status" class="api-status" type="button" title="Click to re-check">
@@ -1246,7 +1246,10 @@
        2. STATE — single source of truth
        ════════════════════════════════════════════════════════════════ */
     const state = {
-      apiUrl: localStorage.getItem("qs.apiUrl") || "http://localhost:8000",
+      // Default to same-origin so the UI works out-of-the-box when served from
+      // the FastAPI backend (e.g. https://ticket.brlikhon.engineer/ui/...).
+      // When opened as a file:// (local dev), fall back to http://localhost:8000.
+      apiUrl: localStorage.getItem("qs.apiUrl") || (location.protocol === "file:" ? "http://localhost:8000" : ""),
       theme:  localStorage.getItem("qs.theme")  || "light",
       transactions: [],
       language: "en",
