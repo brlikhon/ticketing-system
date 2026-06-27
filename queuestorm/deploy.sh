@@ -12,7 +12,7 @@ APP_USER="ubuntu"
 APP_DIR="/home/${APP_USER}/${APP_NAME}"
 APP_PORT="8000"
 DOMAIN="${DOMAIN:-ticket.brlikhon.engineer}"
-PYTHON_VERSION="3.11"
+PYTHON_VERSION="${PYTHON_VERSION:-}"   # auto-detected below
 SERVICE_FILE="/etc/systemd/system/${APP_NAME}.service"
 NGINX_FILE="/etc/nginx/sites-available/${APP_NAME}"
 
@@ -20,6 +20,27 @@ log() { printf "\033[1;36m[deploy]\033[0m %s\n" "$*"; }
 die() { printf "\033[1;31m[fatal]\033[0m %s\n" "$*" >&2; exit 1; }
 
 [[ $EUID -eq 0 ]] || die "must run as root: sudo bash deploy.sh"
+
+# ---------------------------------------------------------------------------
+# 0. Detect Python (prefer 3.11, fall back to 3.12 / 3.13 / 3.10)
+# ---------------------------------------------------------------------------
+detect_python() {
+    for v in 3.11 3.12 3.13 3.10; do
+        if command -v "python${v}" >/dev/null 2>&1; then
+            echo "$v"; return 0
+        fi
+    done
+    return 1
+}
+
+if [[ -z "${PYTHON_VERSION}" ]]; then
+    PYTHON_VERSION="$(detect_python || true)"
+    if [[ -z "${PYTHON_VERSION}" ]]; then
+        # Nothing installed yet — default to 3.11 and let apt-get pull it in
+        PYTHON_VERSION="3.11"
+    fi
+fi
+log "Using Python ${PYTHON_VERSION}"
 
 # ---------------------------------------------------------------------------
 # 1. System packages
@@ -30,7 +51,15 @@ apt-get update -y
 apt-get install -y --no-install-recommends \
     python${PYTHON_VERSION} python${PYTHON_VERSION}-venv python3-pip \
     nginx certbot python3-certbot-nginx \
-    git curl ufw software-properties-common
+    git curl ufw software-properties-common ca-certificates
+
+# If the chosen Python isn't available after apt-get, fall back to system python3
+if ! command -v "python${PYTHON_VERSION}" >/dev/null 2>&1; then
+    log "WARN: python${PYTHON_VERSION} not found after install; falling back to python3"
+    PYTHON_VERSION="$(detect_python || echo "3")"
+    apt-get install -y --no-install-recommends python3 python3-venv || true
+fi
+log "Python resolved to $(python${PYTHON_VERSION} --version 2>&1)"
 
 # ---------------------------------------------------------------------------
 # 2. Firewall (UFW) — open SSH, HTTP, HTTPS
@@ -328,6 +357,22 @@ for i in {1..15}; do
     fi
     sleep 2
 done
+
+# ---------------------------------------------------------------------------
+# 9.5. Post-install verification
+# ---------------------------------------------------------------------------
+echo ""
+log "Post-install summary:"
+echo "  Python:     $(sudo -u ${APP_USER} ${APP_DIR}/venv/bin/python --version 2>&1)"
+echo "  pip:        $(sudo -u ${APP_USER} ${APP_DIR}/venv/bin/pip --version 2>&1 | cut -d' ' -f1-2)"
+echo "  fastapi:    $(sudo -u ${APP_USER} ${APP_DIR}/venv/bin/pip show fastapi 2>/dev/null | grep -E '^Version:' | awk '{print $2}')"
+echo "  pydantic:   $(sudo -u ${APP_USER} ${APP_DIR}/venv/bin/pip show pydantic 2>/dev/null | grep -E '^Version:' | awk '{print $2}')"
+echo "  openai:     $(sudo -u ${APP_USER} ${APP_DIR}/venv/bin/pip show openai 2>/dev/null | grep -E '^Version:' | awk '{print $2}')"
+echo "  uvicorn:    $(sudo -u ${APP_USER} ${APP_DIR}/venv/bin/pip show uvicorn 2>/dev/null | grep -E '^Version:' | awk '{print $2}')"
+echo "  systemd:    $(systemctl is-active ${APP_NAME})"
+echo "  nginx:      $(systemctl is-active nginx)"
+echo "  ufw:        $(ufw status | head -1)"
+echo "  local:      $(curl -fsS http://127.0.0.1:${APP_PORT}/health 2>/dev/null || echo 'NOT RESPONDING')"
 
 echo ""
 echo "================================================================"
