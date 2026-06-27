@@ -80,6 +80,20 @@ ufw --force enable
 # ---------------------------------------------------------------------------
 log "Preparing app directory ${APP_DIR}..."
 install -d -o "${APP_USER}" -g "${APP_USER}" "${APP_PARENT_DIR}"
+
+# Make sure the repo is owned by APP_USER so the inner `sudo -u ${APP_USER} git`
+# never trips over "dubious ownership" (this can happen if the directory was
+# previously created by `sudo git clone` from this same script).
+if [[ -d "${APP_PARENT_DIR}" ]] && [[ "$(stat -c '%U' "${APP_PARENT_DIR}" 2>/dev/null)" != "${APP_USER}" ]]; then
+    log "Fixing ownership of ${APP_PARENT_DIR} -> ${APP_USER}:${APP_USER}"
+    chown -R "${APP_USER}:${APP_USER}" "${APP_PARENT_DIR}"
+fi
+
+# Allow git to operate on a repo owned by a different user. Belt-and-braces in
+# case the chown above is skipped (e.g. read-only fs). Writes to the invoking
+# user's global gitconfig, which is what `sudo -u ubuntu git` will read.
+git config --global --add safe.directory "${APP_PARENT_DIR}" 2>/dev/null || true
+
 if [[ -d "${APP_PARENT_DIR}/.git" ]]; then
     log "Existing repo found at ${APP_PARENT_DIR}, pulling latest..."
     sudo -u "${APP_USER}" git -C "${APP_PARENT_DIR}" pull --ff-only
@@ -89,10 +103,6 @@ else
 fi
 
 cd "${APP_DIR}"
-
-# Allow git to operate on a repo owned by a different user (e.g. left over from
-# an earlier `sudo git clone`). Harmless if already configured.
-git config --global --add safe.directory "${APP_PARENT_DIR}" 2>/dev/null || true
 
 # Sanity check: the clone should have produced .env.example
 if [[ ! -f .env.example ]]; then
