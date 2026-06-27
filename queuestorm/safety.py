@@ -93,11 +93,14 @@ def sanitize_reply(reply: str) -> str:
         # we can rewrite the whole sentence cleanly instead of dropping a
         # "never" prefix next to an LLM-written "never" (causing double-negatives
         # like "We cannot never share such details with anyone").
-        (r'\b(?:we (?:can(?:not)?|will not|won\'t|shall not)|please|kindly)?\s*(?:do not|don\'t)?\s*(?:share|provide|enter|send|give|tell us|type|submit)\s+(?:your\s+)?(?:pin|otp|password|passcode|cvv|card number)[^.!?\n]*',
+        (r'\b(?:we (?:can(?:not)?|will not|won\'t|shall not)|please|kindly)?\s*(?:do not|don\'t)?\s*(?:share|provide|enter|send|give|tell us|type|submit)\s+(?:your\s+)?(?:pin|otp|password|passcode|cvv|card number)[^.!?\n]{0,80}',
          'For your security, please never share your PIN, OTP, password, or card number with anyone — our team will never ask for them.'),
         (r'\bwhat is your (?:pin|otp|password)\b',
          'our team will never ask for such details'),
         (r'\bverify your identity\b', 'our team will verify your case securely'),
+        # Clean up orphan phrases left behind by the LLM after sanitization
+        (r'\bPlease remember to never share these details with anyone\.?\s*', ''),
+        (r'\.+\s*\.', '.'),
     ]
     sanitized = reply
     for pattern, replacement in unsafe_phrases:
