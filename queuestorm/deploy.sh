@@ -81,17 +81,23 @@ ufw --force enable
 log "Preparing app directory ${APP_DIR}..."
 install -d -o "${APP_USER}" -g "${APP_USER}" "${APP_PARENT_DIR}"
 
-# Make sure the repo is owned by APP_USER so the inner `sudo -u ${APP_USER} git`
-# never trips over "dubious ownership" (this can happen if the directory was
-# previously created by `sudo git clone` from this same script).
-if [[ -d "${APP_PARENT_DIR}" ]] && [[ "$(stat -c '%U' "${APP_PARENT_DIR}" 2>/dev/null)" != "${APP_USER}" ]]; then
-    log "Fixing ownership of ${APP_PARENT_DIR} -> ${APP_USER}:${APP_USER}"
+# ALWAYS fix ownership recursively — cheap and idempotent. The previous
+# `if [[ "$(stat -c '%U' "${APP_PARENT_DIR}")" != "${APP_USER}" ]]` check
+# only looked at the parent dir's owner and missed the case where the parent
+# was already owned by ubuntu but .git/ inside was owned by root (because
+# earlier manual `sudo git pull` invocations ran as root).
+if [[ -d "${APP_PARENT_DIR}" ]]; then
+    CURRENT_OWNER="$(stat -c '%U' "${APP_PARENT_DIR}" 2>/dev/null || echo root)"
+    if [[ "${CURRENT_OWNER}" != "${APP_USER}" ]]; then
+        log "Fixing ownership of ${APP_PARENT_DIR} -> ${APP_USER}:${APP_USER}"
+    fi
+    # Always run — git config dir, hooks, objects can all be wrong.
     chown -R "${APP_USER}:${APP_USER}" "${APP_PARENT_DIR}"
 fi
 
-# Allow git to operate on a repo owned by a different user. Belt-and-braces in
-# case the chown above is skipped (e.g. read-only fs). Writes to the invoking
-# user's global gitconfig, which is what `sudo -u ubuntu git` will read.
+# Allow git to operate on a repo owned by a different user (belt + braces in
+# case chown is skipped, e.g. read-only fs). Writes to the invoking user's
+# global gitconfig, which is what `sudo -u ubuntu git` reads.
 git config --global --add safe.directory "${APP_PARENT_DIR}" 2>/dev/null || true
 
 if [[ -d "${APP_PARENT_DIR}/.git" ]]; then
